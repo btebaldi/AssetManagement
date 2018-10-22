@@ -1,0 +1,185 @@
+---
+title: "Análise de Média Variância"
+author: "Bruno Tebaldi"
+date: "21 de outubro de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introdução
+
+Vamos analisar o cenário de retorno de uma carteira com ativos de risco e ativos de renda fixa. Para isso vamos simular uma carteira com dois ativos de risco e um ativo de renda fixa.
+
+
+## Setup
+Para o exercicio vamos precisar de bibliotecas externas para melhor apresentar os dados.
+
+```{r}
+library(ggplot2)
+library(tibble)
+```
+
+Vamos limpar qualquer variavel do sistema. Assim temos a garantia que estamos trabalhando somente com nossas variaveis
+
+```{r}
+# Limpa variaveis
+rm(list=ls())
+```
+
+### Retornos
+Vamos gerar dois ativos de risco com o seguinte
+\[
+R_p = \begin{bmatrix}
+  10.33 \\
+  11.12
+\end{bmatrix}
+\\
+R_{rf} = 8
+\] 
+
+```{r}
+# gera retorno para dois ativos com risco
+R_p = c(10.33, 11.12)
+
+# GEra o retornor de Renda Fixa
+rf = 10
+
+# Calcula o retorno líquido
+R_net = R_p - rf
+```
+
+### Variancia
+Determina a matrix de Variancia e covariancia para os ativos de risco.
+\[
+\Omega = \begin{bmatrix}
+  245.862 & 120.148 \\
+  120.148 & 469.590
+\end{bmatrix}
+\]
+
+```{r}
+# Determina a matrix de Variancia e covariancia para os ativos de risco
+Omega = matrix(NA, ncol=2, nrow=2)
+Omega[1,] = c(245.862, 120.148)
+Omega[2,] = c(120.148, 469.590)
+```
+
+## Experimento
+
+Vamos realizar $10^4$ experimentos. Para isso vamos sortear os pessos para os ativos de risco a partir de uma distribuicao normal padrão. Como a fronteira eficiente é importante para nos, vamos forçar que $10^3$ sorteios somem exatamente 1, e vamos forcar tambem  que $10^3$ sorteios somem -1 (Seria o caso de se vender em vez de comprar).
+
+```{r}
+# Realiza o sorteio dos pesos de uma normal padrao
+sampleSize = 1e4
+weights = matrix(NA, ncol = 2, nrow=sampleSize)
+weights[,1] = rnorm(sampleSize, mean = 0, sd = 1)
+weights[,2] = rnorm(sampleSize, mean = 0, sd = 1)
+
+# forca os pesos serem iguais a 1 e -1
+n=1e3
+weights[1:n,2] = 1-weights[1:n,1]
+weights[n+1:n+n,2] = -1-weights[n+1:n+n,1]
+```
+
+
+Vamos adotar que o retorno da carteira é o portifolio ponderado. Logo temos:
+\[
+R_{c} = R_{p}' w \\
+Var_c = w'\Omega w
+\]
+
+```{r}
+R_c = matrix(NA, ncol = 1, nrow=sampleSize)
+Var_c = matrix(NA, ncol = 1, nrow=sampleSize)
+
+for (i in 1:sampleSize){
+  w_i = as.matrix(weights[i,])
+
+  R_c[i,1] = t(w_i) %*% R_net;
+  Var_c[i,1] = t(w_i) %*% Omega %*% w_i
+}
+```
+
+### Classificação
+
+Vamos organizar os retornos classificando eles pelos pessos. 
+
+1. Pessos dos ativos > 1;
+2. Pessos dos ativos = 1;
+3. Pessos dos ativos entre 1 e 0;
+4. Pessos dos ativos entre 0 e -1;
+5. Pessos dos ativos = -1;
+6. Pessos dos ativos < -1;
+
+```{r}
+
+# soma as linhas
+RS = rowSums(weights)
+
+# Organiza os dados em um data frame.
+data = data.frame("Sdv"=Var_c^0.5,"Ret"=R_c, "Type" = NA)
+data = as.tibble(data)
+
+# classifica os dados
+data[RS>1,3]= "[1, +]"
+data[RS==1,3]= "=1"
+data[RS<1,3]= "[0, 1]"
+data[RS<0,3]= "[-1, 0)"
+data[RS==-1,3]= "=-1"
+data[RS< -1,3]= "[-, -1]"
+
+# remove variaveis que nao serao mais utilizadas
+rm(list = c("RS", "w_i"))
+
+# cria os filtros de selecao
+s1 = (data[,"Type"] == "[1, +]")
+s2 = (data[,"Type"] == "=1")
+s3 = (data[,"Type"] == "[0, 1]")
+s4 = (data[,"Type"] == "[-1, 0)")
+s5 = (data[,"Type"] == "=-1")
+s6 = (data[,"Type"] == "[-, -1]")
+
+```
+
+## Plots
+
+Vamos Agora plotar os graficos.
+
+```{r}
+ggplot(data, aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) 
+```
+
+
+Vamos analisar o caso de quando os pesos sao maiores do que 1
+```{r}
+ggplot(data[s1|s2|s5,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
+```
+
+Vamos analisar o caso de quando os pesos sao maiores do que 0 e menores do que 1
+```{r}
+ggplot(data[s3|s2|s5,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
+```
+
+
+
+Notem que a CAL é tangente a Fronteira eficiente
+```{r}
+ggplot(data[s1|s3|s2|s5,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
+```
+
+
+Analogamente temos fenomenos parecidos para os pesos negativos.
+```{r}
+ggplot(data[s4|s2|s5,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
+ggplot(data[s6|s2|s5,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
+ggplot(data[s4|s6|s2|s5,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
+```
+
+
+Vamos analisar a fronteira eficiente para pessos possitivos.
+```{r}
+ggplot(data[s3|s2|s1,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
+```

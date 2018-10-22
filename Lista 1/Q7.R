@@ -7,9 +7,9 @@ library(readxl)
 rm(list=ls())
 
 # ----- importa Dados -----
-Data <- read_excel("Data.xlsx", sheet = "Planilha5x5", 
-                   range = "A2:C7")
-Correlation = read_excel("Data.xlsx", sheet = "Planilha5x5", 
+Data <- read_excel("./Lista 1/Monitoria1.xlsx", sheet = "Q7", 
+                   range = "B2:C7")
+Correlation = read_excel("./Lista 1/Monitoria1.xlsx", sheet = "Q7", 
                          range = "F2:J7")
 
 # ----- Trabalha os Dados -----

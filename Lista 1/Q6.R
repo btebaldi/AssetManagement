@@ -7,9 +7,9 @@ library(readxl)
 rm(list=ls())
 
 # ----- importa Dados -----
-Data <- read_excel("Data.xlsx", sheet = "Q6", 
+Data <- read_excel("./Lista 1/Monitoria1.xlsx", sheet = "Q6", 
                    range = "A2:C7")
-risk_free = read_excel("Data.xlsx", sheet = "Q6", 
+risk_free = read_excel("./Lista 1/Monitoria1.xlsx", sheet = "Q6", 
                          range = "B9:B9", col_names = F)
 
 # ----- Trabalha os Dados -----
