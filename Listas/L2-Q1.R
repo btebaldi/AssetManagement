@@ -1,4 +1,4 @@
-# --- Carrega livrarias ----
+# Carrega bibliotecas
 library(ggplot2)
 library(dplyr)
 library(readxl)
@@ -6,10 +6,10 @@ library(readxl)
 # Limpa variaveis
 rm(list=ls())
 
-# ----- importa Dados -----
-Data <- read_excel("./Lista 1/Monitoria1.xlsx", sheet = "Q7", 
+# importa Dados
+Data <- read_excel("./Listas/Monitoria2.xlsx", sheet = "Q1", 
                    range = "B2:C7")
-Correlation = read_excel("./Lista 1/Monitoria1.xlsx", sheet = "Q7", 
+Correlation = read_excel("./Listas/Monitoria2.xlsx", sheet = "Q1", 
                          range = "F2:J7")
 
 # ----- Trabalha os Dados -----
@@ -18,6 +18,7 @@ omega = as.matrix(Data["Std"]) %*% t(as.matrix(Data["Std"])) * Correlation
 
 # Constroi o vetor de retorno
 ret = as.matrix(Data["Mean"])
+rownames(ret) = colnames(omega)
 
 # constroi o vetor de 1's
 one = rep(1, length(ret))
@@ -112,6 +113,10 @@ ggplot(d, aes(x=sigma, y=ret)) + geom_point(size=0.5) +
   geom_abline(intercept = 0, slope = as.numeric(slope_CAL)) +
   geom_point(data = data_CAL, aes(x=std, y=ret), shape = 16, colour="blue", size = 2) +
   geom_point(data = data_retEspec, aes(x=std, y=ret), shape = 16, colour="green", size = 2)  
-# ggplot(data, aes(x=Sdv, y=Ret, color=Type)) + geom_point() + ylim(c(5,15)) + xlim(c(0,40))
 
 
+cat(sprintf("Minima Variancia\nret: %0.2f, Var:%0.2f\nWeights:\n",ret_min, var_min), sprintf("%s:%f \n", rownames(w_2), w_2))
+
+cat(sprintf("Portifolio CAL\nret: %0.2f, Var:%0.2f\nWeights:\n",ret_CAL, var_CAL), sprintf("%s:%f \n", rownames(w_cal), w_cal))
+
+cat(sprintf("Retorno Especifico(12%%)\nret: %0.2f, Var:%0.2f\nWeights:\n",ret_retEspec, var_retEspec), sprintf("%s:%f \n", rownames(w_retEspec), w_retEspec))
