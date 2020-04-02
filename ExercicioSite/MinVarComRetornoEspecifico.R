@@ -30,3 +30,4 @@ cat(sprintf('------------------------------------\n'))
 cat(sprintf('Retorno carteira: %2.2f\n', t(ret)%*%weights))
 cat(sprintf('Variancia carteira: %2.2f\n', t(weights)%*%omega%*%weights))
 cat(sprintf('====================================\n'))
+

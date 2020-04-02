@@ -1,5 +1,6 @@
 library(ggplot2)
 library(tibble)
+library(dplyr)
 
 # Limpa variaveis
 rm(list=ls())
@@ -10,7 +11,7 @@ R_p = c(10.33, 11.12)
 # Gera o retorno de Renda Fixa
 rf = 10
 
-# Calcula o retorno líquido
+# Calcula o retorno l?quido
 R_net = R_p - rf
 
 # Determina a matrix de Variancia e covariancia para os ativos de risco
@@ -62,9 +63,14 @@ s5 = (data[,"Type"] == "=-1")
 s6 = (data[,"Type"] == "[-, -1]")
 
 # head(data)
-print( ggplot(data, aes(x=Sdv, y=Ret, color=Type)) + geom_point() )
+
+db = data[s2, ] %>% dplyr::arrange(Ret)
+ggplot(db, aes(x=Sdv, y=Ret, color=Type)) + 
+  geom_path()
+
+ggplot(data, aes(x=Sdv, y=Ret, color=Type)) + geom_point()
 # ggplot(data[data[,"Type"] != "+1",], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))
-print(ggplot(data, aes(x=Sdv, y=Ret, color=Type)) + geom_point( size=0.5) + ylim(c(-2,2)) + xlim(c(0,40)) )
+ggplot(data, aes(x=Sdv, y=Ret, color=Type)) + geom_point( size=0.5) + ylim(c(-2,2)) + xlim(c(0,40)) 
 
 ggplot(data[s1|s6|s2|s5,], aes(x=Sdv, y=Ret, color=Type)) + geom_point(size=0.5) + ylim(c(-2,2))  + xlim(c(0,40))
 
