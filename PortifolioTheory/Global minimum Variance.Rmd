@@ -1,0 +1,393 @@
+---
+title: "Minimum Variance Portfolio"
+author: "Bruno Tebaldi"
+date: "30/05/2021"
+output: html_document
+header-includes: \usepackage{amsmath} 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+```
+
+## Portfolios with Three Risky Assets
+
+Consider a three asset portfolio problem with assets denoted $A$, $B$, and $C$. Let $R_i$ denote the return on asset $i$, where $i \in  \{A, B, C\}$ and assume that the constant expected return (CER) model holds:
+
+\begin{equation}
+\begin{aligned}
+R_{i} & \sim \text { iid } N\left(\mu_{i}, \sigma_{i}^{2}\right) \\
+\operatorname{cov}\left(R_{i}, R_{j}\right) &=\sigma_{i j} .
+\end{aligned}
+\end{equation}
+
+**Example 1 Three asset example data**
+
+| Stock | $\mu_i$ | $\sigma_{i}$ | Pair(i,j) | $\sigma_{i j}$ |
+| :---- | :------ | :-| :-| :-|
+| A | 0.0427 | 0.1000 | (A,B) | 0.0018 |
+| B | 0.0015 | 0.1044 | (A,B) | 0.0011 |
+| C | 0.0285 | 0.1411 | (B,C) | 0.0026 |
+Table 1.1: Three asset example data.
+
+
+Table 1.1 gives example data on monthly means, variances and covariances for the continuously compounded returns on Microsoft, Nordstrom and Starbucks (assets A, B and C) based on sample statistics computed over the five-year period January, 1995 through January, 20001. Clearly, Microsoft provides the best risk-return trade-off and Nordstrom provides with worst.
+
+
+
+Let $x_i$ denote the share of wealth invested in asset $i$ nd assume that all wealth is invested in the three assets so that $x_A +x_B + x_C = 1$. The portfolio return, $R_{p,x}$ is the random variable 
+
+\begin{equation}
+\tag{1.1}
+R_{p, x}=x_{A} R_{A}+x_{B} R_{B}+x_{C} R_{C}
+\end{equation}
+
+The subscript “x” indicates that the portfolio is constructed using the x-weights $x_a$, $x_B$, and $x_C$. The expected return on the portfolio and and the variance of the portfolio return is
+\begin{align}
+\mu_{p, x}&=E\left[R_{p, x}\right] \\
+\sigma_{p, x}^{2} &=\operatorname{var}\left(R_{p, x}\right) \\
+&\Downarrow \\
+\mu_{p, x}&=x_{A} \mu_{A}+x_{B} \mu_{B}+x_{C} \mu_{C} \\
+\tag{1.2}
+\sigma_{p, x}^{2} &=x_{A}^{2} \sigma_{A}^{2}+x_{B}^{2} \sigma_{B}^{2}+x_{C}^{2} \sigma_{C}^{2}+2 x_{A} x_{B} \sigma_{A B}+2 x_{A} x_{C} \sigma_{A C}+2 x_{B} x_{C} \sigma_{B C}
+\end{align}
+Notice that variance of the portfolio return depends on three variance terms and six covariance terms. Hence, with three assets there are twice as many covariance terms than variance terms contributing to portfolio variance. Even with three assets, the algebra representing the portfolio characteristics (1.1) - (1.2) is cumbersome. We can greatly simplify the portfolio algebra using matrix notation.
+
+
+## Portfolio Characteristics Using Matrix Notation
+Define the following 3 × 1 column vectors containing the asset returns and portfolio weights
+
+\begin{equation}
+\mathbf{R}=
+\begin{bmatrix}R_{A} \\ R_{B} \\ R_{C}\end{bmatrix}
+\quad \mathbf{x}=
+\begin{bmatrix}x_{A} \\ x_{B} \\ x_{C}\end{bmatrix}
+\end{equation}
+
+In matrix notation we can lump multiple returns in a single vector which we denote by $R$. Since each of the elements in $R$ is a random variable we call $R$ a *random vector*. The probability distribution of the random vector $R$ is simply the joint distribution of the elements of $R$. In the CER model all returns are jointly normally distributed and this joint distribution is completely characterized by the means, variances and covariances of the returns. We can easily express these values using matrix notation as follows. The 3 × 1 vector of portfolio expected values is
+\begin{equation}
+E[\mathbf{R}]=E\left[\begin{bmatrix}
+R_{A} \\
+R_{B} \\
+R_{C}
+\end{bmatrix}\right]=\begin{bmatrix}
+E\left[R_{A}\right] \\
+E\left[R_{B}\right] \\
+E\left[R_{C}\right]
+\end{bmatrix}=\begin{bmatrix}
+\mu_{A} \\
+\mu_{B} \\
+\mu_{C}
+\end{bmatrix}=\mu
+\end{equation}
+and the 3 × 3 covariance matrix of returns is
+\begin{equation}
+\begin{aligned}
+\operatorname{var}(\mathbf{R}) &=\begin{bmatrix}
+\operatorname{var}\left(R_{A}\right) & \operatorname{cov}\left(R_{A}, R_{B}\right) & \operatorname{cov}\left(R_{A}, R_{C}\right) \\
+\operatorname{cov}\left(R_{B}, R_{A}\right) & \operatorname{var}\left(R_{B}\right) & \operatorname{cov}\left(R_{B}, R_{C}\right) \\
+\operatorname{cov}\left(R_{C}, R_{A}\right) & \operatorname{cov}\left(R_{C}, R_{B}\right) & \operatorname{var}\left(R_{C}\right)
+\end{bmatrix} \\
+&=\begin{bmatrix}
+\sigma_{A}^{2} & \sigma_{A B} & \sigma_{A C} \\
+\sigma_{A B} & \sigma_{B}^{2} & \sigma_{B C} \\
+\sigma_{A C} & \sigma_{B C} & \sigma_{C}^{2}
+\end{bmatrix}=\Sigma .
+\end{aligned}
+\end{equation}
+
+Notice that the covariance matrix is symmetric (elements off the diagonal are equal so that $\Sigma = \Sigma'$, where $\Sigma'$ denotes the transpose of $\Sigma$).
+
+
+Example 2 Example return data using matrix notation
+Using the example data in Table 1.1 we have
+
+```{r}
+asset.names <- c("MSFT", "NORD", "SBUX")
+mu.vec = c(0.0427, 0.0015, 0.0285)
+names(mu.vec) = asset.names
+
+sigma.mat = matrix(c(0.0100, 0.0018, 0.0011,
+                     0.0018, 0.0109, 0.0026,
+                     0.0011, 0.0026, 0.0199),
+                   nrow=3, ncol=3)
+
+dimnames(sigma.mat) = list(asset.names, asset.names)
+
+mu.vec
+
+sigma.mat
+```
+
+
+## Finding the Global Minimum Variance Portfolio
+
+Consider a set $W = (m_a, m_b, m_c)$ of weights, and a set $A = (a_1, a_2, a_3)$ of assets. The global minimum variance portfolio for the set $M$ and assets $A$ solves the following constrained minimization problem:
+\begin{equation}
+\tag{1.4}
+\begin{array}{c}
+\min_{m_{A}, m_{B}, m_{C}} \left\{ \sigma_{p, m}^{2}=m_{A}^{2} \sigma_{A}^{2}+m_{B}^{2} \sigma_{B}^{2}+m_{C}^{2} \sigma_{C}^{2} \\
++2 m_{A} m_{B} \sigma_{A B}+2 m_{A} m_{C} \sigma_{A C}+2 m_{B} m_{C} \sigma_{B C} \right\} \\
+\text { s.t. } m_{A}+m_{B}+m_{C}=1
+\end{array}
+\end{equation}
+
+The Lagrangian for this problem is
+
+\begin{equation}
+\begin{aligned}
+L\left(m_{A}, m_{B}, m_{C}, \lambda\right)=& m_{A}^{2} \sigma_{A}^{2}+m_{B}^{2} \sigma_{B}^{2}+m_{C}^{2} \sigma_{C}^{2} \\
+&+2 m_{A} m_{B} \sigma_{A B}+2 m_{A} m_{C} \sigma_{A C}+2 m_{B} m_{C} \sigma_{B C} \\
+&+\lambda\left(m_{A}+m_{B}+m_{C}-1\right)
+\end{aligned}
+\end{equation}
+and the first order conditions (FOCs) for a minimum are
+\begin{equation}
+\tag{1.5}
+\begin{array}{l}
+0=\frac{\partial L}{\partial m_{A}}=2 m_{A} \sigma_{A}^{2}+2 m_{B} \sigma_{A B}+2 m_{C} \sigma_{A B}+\lambda \\
+0=\frac{\partial L}{\partial m_{A}}=2 m_{B} \sigma_{B}^{2}+2 m_{A} \sigma_{A B}+2 m_{C} \sigma_{B C}+\lambda \\
+0=\frac{\partial L}{\partial m_{A}}=2 m_{C} \sigma_{C}^{2}+2 m_{A} \sigma_{A C}+2 m_{B} \sigma_{B C}+\lambda \\
+0=\frac{\partial L}{\partial \lambda}=m_{A}+m_{B}+m_{C}-1
+\end{array}
+\end{equation}
+
+The FOCs (1.5) gives four linear equations in four unknowns which can be solved to find the global minimum variance portfolio weights $m_A$, $m_B$, and $m_C$. Using matrix notation, the problem (1.4) can be concisely expressed as
+\begin{equation}
+\tag{1.6}
+\min_{\mathbf{m}} \sigma_{p, m}^{2}=\mathbf{m}^{\prime} \Sigma \mathbf{m} \quad \text { s.t. } \mathbf{m}^{\prime} 1=1
+\end{equation}
+The four linear equation describing the first order conditions (1.5) has the matrix representation
+\begin{equation}
+\begin{bmatrix}
+2 \sigma_{A}^{2} & 2 \sigma_{A B} & 2 \sigma_{A C} & 1 \\
+2 \sigma_{A B} & 2 \sigma_{B}^{2} & 2 \sigma_{B C} & 1 \\
+2 \sigma_{A C} & 2 \sigma_{B C} & 2 \sigma_{C}^{2} & 1 \\
+1 & 1 & 1 & 0
+\end{bmatrix}\begin{bmatrix}
+m_{A} \\
+m_{B} \\
+m_{C} \\
+\lambda
+\end{bmatrix}=\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+1
+\end{bmatrix}
+\end{equation}
+
+or, more concisely,
+
+\begin{equation}
+\tag{1.7}
+\begin{bmatrix}
+2 \Sigma & 1 \\
+1^{\prime} & 0
+\end{bmatrix}\begin{bmatrix}
+\mathrm{m} \\
+\lambda
+\end{bmatrix}=\begin{bmatrix}
+0 \\
+1
+\end{bmatrix}
+\end{equation}
+
+
+The system (1.7) is of the form $A_m Z_m = b$. The solution for $Z_m$ is then
+$Z_m = A_{m}^{−1} b$
+The first three elements of $Z_m$ are the portfolio weights $m = (m_A, m_B, m_c)'$ for the global minimum variance portfolio with expected return $\mu_{p,m} = m'\mu$ and variance $\sigma^2_{p,m} = m'\Sigma m$
+
+**Example 4** *Global minimum variance portfolio for example data*
+Using the data in Table 1, we can use R to compute the global minimum variance portfolio weights from (1.8) as follows:
+
+```{r cars}
+n = nrow(sigma.mat)
+
+Am.mat = rbind(cbind(2*sigma.mat, rep(1, n)), c(rep(1, n), 0))
+Am.mat
+
+b.vec = c(rep(0, 3), 1)
+b.vec
+
+z.m.mat = solve(Am.mat)%*%b.vec
+z.m.mat
+
+m.vec = z.m.mat[1:3,1]
+m.vec
+
+```
+
+Hence, the global minimum variance portfolio has portfolio weights $m_{MSFT} = 0.4411$, $m_{NORD} = 0.3656$, and $m_{SBUX} = 0.1933$ and and is given by the vector $m = (0.4411, 0.3656, 0.1933)$
+
+The expected return on this portfolio, $\mu_{p,m} = m'\mu$ is
+```{r}
+mu.gmin = t(m.vec) %*% mu.vec
+mu.gmin
+
+```
+The portfolio variance, $\mu_{p,m} = m'\mu$ and standard deviation, $\mu_{p,m} = m'\mu$ are
+```{r}
+
+sig2.gmin = t(m.vec) %*% sigma.mat %*% m.vec
+sig.gmin = sqrt(sig2.gmin)
+
+sig2.gmin
+sig.gmin
+```
+
+## Finding Efficient Portfolios
+
+The investment opportunity set is the set of portfolio expected return, $\mu_p$, and portfolio standard deviation, $\sigma_p$, values for all possible portfolios whose weights sum to one. As in the two risky asset case, this set can be described in a graph with $\mu_p$ on the vertical axis and $\sigma_p$ on the horizontal axis. With two assets, the investment opportunity set in $(\mu_p, \sigma_p)$ - space lies on a curve (one side of a hyperbola). With three or more assets, the investment opportunity set in $(\mu_p, \sigma_p)$ space is described by set of values whose general shape is complicated and depends crucially on the covariance terms $\sigma_{i,j}$
+
+However, we do not have to fully characterize the entire investment opportunity set. If we assume that investors choose portfolios to maximize expected return subject to a target level of risk, or, equivalently, to minimize risk subject to a target expected return, then we can simplify the asset allocation problem by only concentrating on the set of efficient portfolios. These portfolios lie on the boundary of the investment opportunity set above the global minimum variance portfolio. This is the framework originally developed by Harry Markowitz, the father of portfolio theory and winner of the Nobel Prize in economics.
+
+Following Markowitz, we assume that investors wish to find portfolios that have the best expected return-risk trade-off. Markowitz characterized these efficient portfolios in two equivalent ways. In the first way, investors seek to find portfolios that maximize portfolio expected return for a given level of risk as measured by portfolio variance. Let $\sigma^{2}_{p,0}$ denote a target level of risk. Then Harry Markowitz characterized the constrained maximization problem to find an efficient portfolio as
+\begin{equation}
+\begin{aligned}
+\max_{\mathbf{x}} \mu_{p} &=\mathbf{x}^{\prime} \boldsymbol{\mu} \text { s.t. } \\
+\sigma_{p}^{2} &=\mathbf{x}^{\prime} \mathbf{\Sigma} \mathbf{x}=\sigma_{p, 0}^{2} \text { and } \mathbf{x}^{\prime} \mathbf{1}=1
+\end{aligned}
+\end{equation}
+
+Markowitz showed that the investor’s problem of maximizing portfolio expected return subject to a target level of risk has an equivalent dual representation in which the investor minimizes the risk of the portfolio (as measured by portfolio variance) subject to a target expected return level. Let $\mu_{p,0}$ denote a target expected return level. Then the dual problem is the constrained minimization problem
+\begin{equation}
+\tag{1.14}
+\begin{aligned}
+\min_{\mathbf{x}} \sigma_{p, x}^{2} &=\mathbf{x}^{\prime} \boldsymbol{\Sigma} \mathbf{x} \text { s.t. } \\
+\mu_{p} &=\mathbf{x}^{\prime} \boldsymbol{\mu}=\mu_{p, 0}, \text { and } \mathbf{x}^{\prime} \mathbf{1}=1
+\end{aligned}
+\end{equation}
+
+
+To find efficient portfolios of risky assets in practice, the dual problem (1.14) is most often solved. This is partially due to computational conveniences and partly due to investors being more willing to specify target expected returns rather than target risk levels. The efficient portfolio frontier is a graph of $\mu_{p}$ versus $\sigma_{p}$ values for the set of efficient portfolios generated by solving (1.14) for all possible target expected return levels  $\mu_{p,0}$ above the expected return on the global minimum variance portfolio. Just as in the two asset case, the resulting efficient frontier will resemble one side of an hyperbola and is often called the “Markowitz bullet”.
+
+To solve the constrained minimization problem (1.14), first form the Lagrangian function
+\begin{equation}
+L\left(x, \lambda_{1}, \lambda_{2}\right)=\mathrm{x}^{\prime} \Sigma \mathrm{x}+\lambda_{1}\left(\mathrm{x}^{\prime} \mu-\mu_{p, 0}\right)+\lambda_{2}\left(\mathrm{x}^{\prime} 1-1\right)
+\end{equation}
+
+Because there are two constraints ($x'\mu = \mu_{p,0}$ and $x'\mathbf{1} = 1$) there are two
+Lagrange multipliers $\lambda_{1}$ and  $\lambda_{2}$. The FOCs for a minimum are the linear
+equations
+
+\begin{equation}
+\begin{array}{l}
+\frac{\partial L\left(\mathbf{x}, \lambda_{1}, \lambda_{2}\right)}{\partial \mathbf{x}}=2 \Sigma \mathbf{x}+\lambda_{1} \mu+\lambda_{2} 1=\mathbf{0} \\
+\frac{\partial L\left(\mathbf{x}, \lambda_{1}, \lambda_{2}\right)}{\partial \lambda_{1}}=\mathbf{x}^{\prime} \mu-\mu_{p, 0}=0 \\
+\frac{\partial L\left(\mathbf{x}, \lambda_{1}, \lambda_{2}\right)}{\partial \lambda_{2}}=\mathbf{x}^{\prime} \mathbf{1}-1=0
+\end{array}
+\end{equation}
+
+These FOCs consist of five linear equations in five unknowns ($x_A$, $x_B$, $x_C$, $\lambda_{1}$, $\lambda_{2}$). We can represent the system of linear equations using matrix algebra as
+\begin{equation}
+\begin{bmatrix}
+2 \Sigma & \mu & 1 \\
+\mu^{\prime} & 0 & 0 \\
+1^{\prime} & 0 & 0
+\end{bmatrix}
+\begin{bmatrix}\mathrm{x} \\ \lambda_{1} \\ \lambda_{2} \end{bmatrix}
+=\begin{bmatrix}0 \\ \mu_{p, 0} \\ 1 \end{bmatrix}
+\end{equation}
+
+
+or $A z_x = b_0$. The solution for $z_x$ is then $z_x = A^{-1}b_0$. If $\mu_0$ is greater than or equal to the expected return on the global minimum variance portfolio then $x$ is an efficient portfolio.
+
+**Example 6** *Efficient portfolio with the same expected return as Microsoft*
+
+Using the data in Table 1, consider finding a minimum variance portfolio with the same expected return as Microsoft. This will be an efficient portfolio because $\mu_{MSF}= 0.0427 > \mu_{p,m} = 0.02489$ Call this portfolio $x = (x_{MSFT}, x_{NORD}, x_{SBUX})$. That is, consider solving (1.14) with target expected return $\mu_{p,0} = 0.0427$ using (1.18). The R calculations to create the matrix $A$ and the vectors $z_x$ and $b_{MSFT}$ are:
+
+```{r}
+n <- nrow(sigma.mat)
+A.mat_1 = cbind(2*sigma.mat, mu.vec, rep(1, n))
+A.mat_1
+
+A.mat_2 = c(mu.vec, 0, 0)
+A.mat_2
+
+A.mat_3 = c(rep(1, 3), 0, 0)
+A.mat_3
+
+A.mat = rbind(A.mat_1, A.mat_2, A.mat_3)
+A.mat
+
+bmsft.vec = c(rep(0, n), mu.vec["MSFT"], 1)
+bmsft.vec
+
+z.mat = solve(A.mat)%*%bmsft.vec
+x.vec = z.mat[1:n,]
+x.vec
+```
+
+### Lets graph the Efficient frontier
+
+```{r}
+# step 1 - Build a function that gives the variance of the efficient protifolio
+efi.Front.weights <- function(x, mu.vec, sigma.mat){
+  n <- nrow(sigma.mat)
+  A.mat = rbind(cbind(2*sigma.mat, mu.vec, rep(1, n)), c(mu.vec, 0, 0), c(rep(1, 3), 0, 0))
+  
+  b0 = c(rep(0, n), x, 1)
+  
+  z.mat = solve(A.mat)%*%b0
+  w.vec = z.mat[1:n,]
+  
+  return(w.vec)
+}
+
+# step 2 - Build a grid of points of the efficient frontier
+tbl.eff <- tibble(mu=seq(from=-0.02, to=0.07, length.out=100), sd=as.numeric(NA))
+
+# step 3 - For each point in the grid calculate its minimum variance
+for (lin in 1:nrow(tbl.eff)) {
+  w <- efi.Front.weights(tbl.eff$mu[lin], mu.vec, sigma.mat)
+  
+  tbl.eff$sd[lin] <- t(w)%*% sigma.mat %*%w
+}
+
+# Original assets
+tbl.points <- tibble(mu=mu.vec, sd=diag(sigma.mat))
+
+ggplot() +
+  geom_path(mapping = aes(x=sd, y=mu), data = tbl.eff, size = 1, linetype = "dashed", colour ="black") +
+  geom_point(mapping = aes(x=sd, y=mu), data = tbl.points, colour = "red", size=2, alpha=0.5) +
+  geom_text(mapping = aes(x=sd, y=mu-0.005, label=c("MSFT", "NORD", "SUBX")), data = tbl.points, colour = "red") +
+  labs(title = "Efficient portfolio frontier",
+       x="Standard dev.",
+       y="Return",
+       color = "Port. Return") + scale_color_gradient(low="blue", high="green")
+
+
+
+# step 4 - Populate the graph with other portifolio choices.
+M=10000
+tbl.random <- tibble(id=1:M, mu=as.numeric(NA), sd=as.numeric(NA))
+w1 <- runif(n=M, min = (1/3-1/2), max = (1/3+1/2))
+w2 <- runif(n=M, min = (1/3-1/2), max = (1/3+1/2))
+w3 <- 1-w1 -w2
+W=matrix(NA, ncol = 3, nrow = M)
+for(i in 1: M){
+  col.selector <- sample(1:3, size = 3, replace = FALSE)
+  W[i, col.selector]<- c(w1[i], w2[i], w3[i])
+}
+
+tbl.random$mu <- W%*% mu.vec
+for(i in 1:nrow(tbl.random)){
+  tbl.random$sd[i] <- W[i,] %*% sigma.mat %*% as.matrix(W[i,])   
+}
+
+ggplot() +
+  geom_point(mapping = aes(x=sd, y=mu, colour = mu), data = tbl.random, alpha=0.3) +
+  geom_path(mapping = aes(x=sd, y=mu), data = tbl.eff, size = 1, linetype = "dashed", colour ="black") +
+  geom_point(mapping = aes(x=sd, y=mu), data = tbl.points, colour = "red", size=2, alpha=0.5) +
+  geom_text(mapping = aes(x=sd, y=mu-0.005, label=c("MSFT", "NORD", "SUBX")), data = tbl.points, colour = "red") +
+  labs(title = "Efficient portfolio frontier",
+       x="Standard dev.",
+       y="Return",
+       color = "Port. Return") + scale_color_gradient(low="blue", high="green")
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
