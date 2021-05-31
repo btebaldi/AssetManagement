@@ -390,4 +390,29 @@ ggplot() +
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+##Efficient Portfolios of Three Risky Assets and a Risk-Free Asset
+In the previous chapter, we showed that efficient portfolios of two risky assets and a single risk-free (T-Bill) asset are portfolios consisting of the highest Sharpe ratio portfolio (tangency portfolio) and the T-Bill. With three or more risky assets and a T-Bill the same result holds.
+
+### Computing the Tangency Portfolio
+The tangency portfolio is the portfolio of risky assets that has the highest Sharpe ratio. The tangency portfolio, denoted $t =(t_{MSFT}, t_{NORD}, t_{SBUX})'$ solves the constrained maximization problem
+\begin{equation}
+\max_{\mathrm{t}} \frac{\mathbf{t}^{\prime} \mu-r_{f}}{\left(\mathbf{t}^{\prime} \Sigma \mathrm{t}\right)^{\frac{1}{2}}}=\frac{\mu_{p, t}-r_{f}}{\sigma_{p, t}} \text { s.t. } \mathbf{t}^{\prime} 1=1
+\end{equation}
+
+  where $\mu_{p,t} = t'\mu$ and $\sigma_{p,t} = (t'\Sigma t)^{\frac{1}{2}}$ The Lagrangian for this problem is
+\begin{equation}
+L(\mathbf{t}, \lambda)=\left(\mathbf{t}^{\prime} \boldsymbol{\mu}-r_{f}\right)\left(\mathbf{t}^{\prime} \mathbf{\Sigma} \mathbf{t}\right)^{-\frac{1}{2}}+\lambda\left(\mathbf{t}^{\prime} \mathbf{1}-1\right)
+\end{equation}
+
+Using the chain rule, the first order conditions are
+\begin{equation}
+\begin{array}{l}
+\frac{\partial L(\mathbf{t}, \lambda)}{\partial \mathbf{t}}=\mu\left(\mathbf{t}^{\prime} \mathbf{\Sigma} \mathbf{t}\right)^{-\frac{1}{2}}-\left(\mathbf{t}^{\prime} \boldsymbol{\mu}-r_{f}\right)\left(\mathbf{t}^{\prime} \mathbf{\Sigma} \mathbf{t}\right)^{-3 / 2} \mathbf{\Sigma} \mathbf{t}+\lambda \mathbf{1}=\mathbf{0} \\
+\frac{\partial L(\mathbf{t}, \lambda)}{\partial \lambda}=\mathbf{t}^{\prime} 1-1=0
+\end{array}
+\end{equation}
+
+After much tedious algebra, it can be shown that the solution for t has a nice simple expression:
+
+
+
